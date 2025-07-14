@@ -28,7 +28,7 @@ class RegisterView(View):
             user = form.save()
             login(request, user)
             messages.success(request, 'Registration completed successfully!')
-            return redirect('chat:home')
+            return redirect('chat:index')
         return render(request, self.template_name, {'form': form})
 
 
