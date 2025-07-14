@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ group.title }} - Group Chat{% endblock %}
+
+{% block extra_css %}
+    <style>
+        body {
+            background: #f0f2f5;
+            font-family: 'Vazir', 'Tahoma', sans-serif;
+        }
+
+        .chat-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 250px;
+            gap: 15px;
+            height: calc(100vh - 4rem);
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .chat-wrapper {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+            }
+
+            .online-users {
+                order: 2;
+                margin-top: 10px;
+            }
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            color: #fff;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f7f9fc;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 10px 15px;
+            border-radius: 16px;
+            word-wrap: break-word;
+            position: relative;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background: #dcf8c6;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid #e1e1e1;
+        }
+
+        .message .sender {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 3px;
+        }
+
+        .message .time {
+            font-size: 0.7em;
+            color: #666;
+            text-align: left;
+            margin-top: 3px;
+        }
+
+        .system-message {
+            text-align: center;
+            color: #888;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            font-style: italic;
+        }
+
+        .chat-footer {
+            display: flex;
+            gap: 8px;
+            padding: 10px;
+            background: #f1f3f5;
+        }
+
+        .chat-footer input {
+            flex: 1;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            padding: 8px 15px;
+        }
+
+        .chat-footer button {
+            border: none;
+            background: #4e54c8;
+            color: #fff;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+        }
+
+        .online-users {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .online-users h3 {
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: #4e54c8;
+        }
+
+        .online-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .online-user:hover {
+            background: #f5f5f5;
+        }
+
+        .online-user .badge {
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .typing-indicator {
+            font-size: 0.85rem;
+            color: #666;
+            padding: 5px 15px;
+            min-height: 25px;
+            font-style: italic;
+        }
+
+        .group-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-leave, .btn-delete {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: #fff;
+        }
+
+        .btn-leave {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #212529;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container py-3">
+        <div class="chat-wrapper">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div>{{ group.title }}</div>
+                    <div class="group-actions">
+                        {% if group.creator == user %}
+                            <form action="{% url 'chat:leave_chat' group.unique_id %}" method="post"
+                                  class="delete-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-delete"
+                                        onclick="return confirm('Are you sure you want to delete this group?')">
+                                    Delete Group
+                                </button>
+                            </form>
+                        {% else %}
+                            <form action="{% url 'chat:leave_chat' group.unique_id %}" method="post" class="leave-form">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-leave"
+                                        onclick="return confirm('Are you sure you want to leave this group?')">
+                                    Leave Group
+                                </button>
+                            </form>
+                        {% endif %}
+                        <a href="{% url 'chat:index' %}" class="btn btn-sm btn-leave">
+                            <i class="fas fa-home me-2"></i>Home
+                        </a>
+
+                        <input type="hidden" id="joinLink" readonly value="{{ join_link }}">
+                        <button type="button" class="btn btn-sm btn-primary" id="copyLinkBtn">
+                            <i class="fas fa-link me-2"></i>Copy Link
+                        </button>
+                    </div>
+                </div>
+
+                <div class="messages-container" id="messages-container">
+                    {% for msg in chat_messages %}
+                        {% if msg.is_system_message %}
+                            <div class="system-message">
+                                {{ msg.message }}
+                            </div>
+                        {% else %}
+                            <div class="message {% if msg.sender == user %}sent{% else %}received{% endif %}">
+                                <div class="sender">{{ msg.sender.username }}</div>
+                                <div class="content">{{ msg.message }}</div>
+                                <div class="time">{{ msg.timestamp|time:"H:i" }}</div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div class="typing-indicator" id="typingIndicator"></div>
+
+                <div class="chat-footer">
+                    <input type="text" id="messageInput" placeholder="Type your message..." autocomplete="off">
+                    <button id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="online-users">
+                <h3>Online Users (<span id="onlineCount">0</span>)</h3>
+                <div id="onlineUsersList"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        let chatSocket = null;
+        let typingTimer = null;
+        const TYPING_TIMEOUT = 2000; // 2 seconds
+
+        function connectWebSocket() {
+            const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            chatSocket = new WebSocket(wsScheme + window.location.host + '/ws/chat/{{ group.unique_id }}/');
+
+            chatSocket.onopen = function () {
+                console.log('WebSocket connected');
+            };
+
+            chatSocket.onmessage = function (e) {
+                const data = JSON.parse(e.data);
+                console.log('Received:', data);
+
+                switch (data.type) {
+                    case 'chat_message':
+                        appendMessage(data);
+                        break;
+                    case 'system_message':
+                        appendSystemMessage(data);
+                        break;
+                    case 'online_users':
+                        updateOnlineUsers(data.users, data.current_user);
+                        break;
+                    case 'typing':
+                        updateTypingIndicator(data.message);
+                        break;
+                }
+
+                scrollToBottom();
+            };
+
+            chatSocket.onclose = function () {
+                console.log('WebSocket disconnected. Reconnecting...');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function appendMessage(data) {
+            const isCurrentUser = data.username === '{{ user.username }}';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
+
+            messageDiv.innerHTML = `
+                <div class="sender">${data.username}</div>
+                <div class="content">${data.message}</div>
+                <div class="time">${data.timestamp}</div>
+            `;
+
+            document.getElementById('messages-container').appendChild(messageDiv);
+            updateTypingIndicator('');
+        }
+
+        function appendSystemMessage(data) {
+            const systemDiv = document.createElement('div');
+            systemDiv.className = 'system-message';
+            systemDiv.textContent = `${data.message}`;
+            document.getElementById('messages-container').appendChild(systemDiv);
+        }
+
+        function updateOnlineUsers(users, currentUser) {
+            const list = document.getElementById('onlineUsersList');
+            const count = document.getElementById('onlineCount');
+            const otherUsers = users.filter(user => user !== currentUser);
+
+            list.innerHTML = '';
+            count.textContent = otherUsers.length;
+
+            otherUsers.forEach(username => {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'online-user';
+                userDiv.innerHTML = `
+                    <span class="badge"></span>
+                    <span>${username}</span>
+                `;
+                list.appendChild(userDiv);
+            });
+        }
+
+        function updateTypingIndicator(message) {
+            document.getElementById('typingIndicator').textContent = message;
+        }
+
+        function handleTyping() {
+            if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+
+            chatSocket.send(JSON.stringify({
+                type: 'typing',
+                is_typing: true
+            }));
+
+            if (typingTimer) {
+                clearTimeout(typingTimer);
+            }
+
+            typingTimer = setTimeout(() => {
+                if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                    chatSocket.send(JSON.stringify({
+                        type: 'typing',
+                        is_typing: false
+                    }));
+                }
+            }, TYPING_TIMEOUT);
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messages-container');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (message && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({
+                    type: 'chat_message',
+                    message: message
+                }));
+                messageInput.value = '';
+
+                if (typingTimer) {
+                    clearTimeout(typingTimer);
+                }
+                updateTypingIndicator('');
+            }
+        }
+
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+
+        const messageInput = document.getElementById('messageInput');
+        messageInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        copyLinkBtn.addEventListener('click', function () {
+            const link = '{{ join_link }}';
+            navigator.clipboard.writeText(link).then(() => {
+                alert('Link copied!');
+            });
+        });
+
+        messageInput.addEventListener('input', handleTyping);
+
+        connectWebSocket();
+    </script>
+{% endblock %}

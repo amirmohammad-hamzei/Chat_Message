@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container py-5" dir="ltr">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-3 rounded-top-4">
+                    <h2 class="mb-0">Register for Chat Room</h2>
+                </div>
+                <div class="card-body p-4">
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" id="registerForm" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                <input type="text"
+                                       name="username"
+                                       id="id_username"
+                                       class="form-control form-control-lg {% if form.username.errors %}is-invalid{% endif %}"
+                                       placeholder="Enter your username"
+                                       required
+                                       autofocus>
+                                <div class="invalid-feedback">
+                                    {% if form.username.errors %}
+                                        {{ form.username.errors.0 }}
+                                    {% else %}
+                                        Please enter a valid username
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">4 to 150 characters</small>
+                            <div id="username-feedback" class="mt-1"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password1" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password"
+                                       name="password1"
+                                       id="id_password1"
+                                       class="form-control form-control-lg {% if form.password1.errors %}is-invalid{% endif %}"
+                                       placeholder="Enter your password"
+                                       required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="id_password1">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                                <div class="invalid-feedback">
+                                    {% if form.password1.errors %}
+                                        {{ form.password1.errors.0 }}
+                                    {% else %}
+                                        Please enter a valid password
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="id_password2" class="form-label">Confirm Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                <input type="password"
+                                       name="password2"
+                                       id="id_password2"
+                                       class="form-control form-control-lg {% if form.password2.errors %}is-invalid{% endif %}"
+                                       placeholder="Confirm your password"
+                                       required>
+                                <button class="btn btn-outline-secondary toggle-password" type="button" data-target="id_password2">
+                                    <i class="far fa-eye"></i>
+                                </button>
+                                <div class="invalid-feedback">
+                                    {% if form.password2.errors %}
+                                        {{ form.password2.errors.0 }}
+                                    {% else %}
+                                        Passwords don't match
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg py-2" id="submitBtn">
+                                <span class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
+                                Register
+                            </button>
+                            <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-lg py-2">
+                                Already have an account? Sign in
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle password visibility
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+
+    // Form validation
+    const form = document.getElementById('registerForm');
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            } else {
+                const submitBtn = document.getElementById('submitBtn');
+                const spinner = submitBtn.querySelector('.spinner-border');
+                submitBtn.disabled = true;
+                spinner.classList.remove('d-none');
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+
+    // Real-time username validation
+    const usernameInput = document.getElementById('id_username');
+    const usernameFeedback = document.getElementById('username-feedback');
+
+    if (usernameInput) {
+        let usernameCheckTimeout;
+
+        usernameInput.addEventListener('input', function() {
+            clearTimeout(usernameCheckTimeout);
+            const username = this.value.trim();
+
+            if (username.length < 4) {
+                updateUsernameFeedback('Username must be at least 4 characters', 'text-danger');
+                return;
+            }
+
+            usernameCheckTimeout = setTimeout(() => {
+                updateUsernameFeedback('Checking availability...', 'text-info');
+
+                // Simulate API call
+                setTimeout(() => {
+                    if (username.length < 5) {
+                        updateUsernameFeedback('Username must be at least 5 characters', 'text-danger');
+                    } else if (username === 'admin' || username === 'user') {
+                        updateUsernameFeedback('This username is already taken', 'text-danger');
+                    } else {
+                        updateUsernameFeedback('Username is available', 'text-success');
+                    }
+                }, 500);
+            }, 800);
+        });
+
+        function updateUsernameFeedback(message, className) {
+            usernameFeedback.textContent = message;
+            usernameFeedback.className = 'mt-1 ' + className;
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if already_member %}Group Member{% else %}Join Successful{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(145deg, #f3f4f6, #e9ecef);
+        min-height: 100vh;
+        direction: ltr;
+    }
+    .card {
+        border-radius: 1rem;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        animation: slideFade 0.8s ease forwards;
+    }
+    .card-header {
+        background: linear-gradient(135deg, #0d6efd, #6610f2);
+        color: #fff;
+        border-top-left-radius: 1rem;
+        border-top-right-radius: 1rem;
+        text-align: center;
+    }
+    .card-header h4 {
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #0d6efd, #6610f2);
+        border: none;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+        transition: all 0.3s ease-in-out;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    }
+    .btn-outline-secondary {
+        border: 2px solid #dee2e6;
+        color: #495057;
+        transition: all 0.3s ease-in-out;
+    }
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+        border-color: #0d6efd;
+        transform: translateY(-1px);
+    }
+    .animated-icon {
+        animation: popBounce 1s ease-out forwards;
+    }
+    @keyframes slideFade {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes popBounce {
+        0% { transform: scale(0.5); opacity: 0; }
+        60% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-header py-4">
+                    <h4 class="mb-0">
+                        {% if already_member %}
+                            <i class="fas fa-users animated-icon me-2"></i>You're a Member
+                        {% else %}
+                            <i class="fas fa-check-circle animated-icon me-2"></i>Join Successful
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="fas fa-users fa-4x text-primary mb-3 animated-icon"></i>
+                        <h4 class="fw-bold">{{ group.title }}</h4>
+                        <p class="text-muted">
+                            {% if already_member %}
+                                You are already a member of this group.
+                            {% else %}
+                                Congratulations! You've successfully joined the group.
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="d-grid gap-3">
+                        <a href="{% url 'chat:chat_view' chat_id=group.unique_id %}"
+                           class="btn btn-primary btn-lg">
+                            <i class="fas fa-comments me-2"></i>Enter Group Chat
+                        </a>
+                        <a href="{% url 'chat:index' %}"
+                           class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-home me-2"></i>Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
